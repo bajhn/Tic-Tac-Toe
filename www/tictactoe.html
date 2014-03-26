@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN" "http://www.w3.org/Math/DTD/mathml2/xhtml-math11-f.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Tic-Tac-Toe</title>
+		<script src="tictactoe.js" type="text/javascript"></script>
+		<link type="text/css" rel="stylesheet" href="tictactoe.css"></link>
+	</head>
+	<body onload="setup();">
+		<h1 style="text-align:center">Tic-Tac-Toe</h1>
+		<p>Something old.</p>
+		<hr style="width:100%"></hr>
+		<table style="align:center">
+			<tr>
+				<td class="top left"><img id="ttt0_0" onclick="userMove(this);" src="images/blank.png" alt="blank"></img></td>
+				<td class="top center"><img id="ttt0_1" onclick="userMove(this);" src="images/blank.png" alt="blank"></img></td>
+				<td class="top right"><img id="ttt0_2" onclick="userMove(this);" src="images/blank.png" alt="blank"></img></td>
+			</tr>
+			<tr>
+				<td class="middle left"><img id="ttt1_0" onclick="userMove(this);" src="images/blank.png" alt="blank"></img></td>
+				<td class="middle center"><img id="ttt1_1" onclick="userMove(this);" src="images/blank.png" alt="blank"></img></td>
+				<td class="middle right"><img id="ttt1_2" onclick="userMove(this);" src="images/blank.png" alt="blank"></img></td>
+			</tr>
+			<tr>
+				<td class="bottom left"><img id="ttt2_0" onclick="userMove(this);" src="images/blank.png" alt="blank"></img></td>
+				<td class="bottom center"><img id="ttt2_1" onclick="userMove(this);" src="images/blank.png" alt="blank"></img></td>
+				<td class="bottom right"><img id="ttt2_2" onclick="userMove(this);" src="images/blank.png" alt="blank"></img></td>
+			</tr>
+		</table>
+		<form>
+			<!-- <button onclick="doReset();">Reset</button> -->
+			<button onclick="board.reset();">New Game</button>
+		</form>
+	</body>
+</html>

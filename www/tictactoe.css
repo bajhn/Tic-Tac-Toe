@@ -1,0 +1,30 @@
+/* Style sheet */
+
+/* The class names for the table cell borders reflect the position of*/
+/* the cell in the table, not where we want the border. */
+td.top {
+    margin: 0px;
+    border-bottom: solid
+}
+td.middle {
+    margin: 0px;
+    border-top: solid;
+    border-bottom: solid
+}
+td.bottom {
+    margin: 0px;
+    border-top: solid
+}
+td.left {
+    margin: 0px;
+    border-right: solid
+}
+td.center {
+    margin: 0px;
+    border-left: solid;
+    border-right: solid
+}
+td.right {
+    margin: 0px;
+    border-left: solid
+}
