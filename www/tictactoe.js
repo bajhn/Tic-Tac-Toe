@@ -122,7 +122,8 @@ Board.prototype.runGame = function (elId) {
 				this.playO(Number(!curPlayer));
 			}
 			else {
-				alert("I don't know how to play as X yet.");
+				alert("I don't know how to play as X yet. Sorry!");
+				// this.playX(Number(!curPlayer));
 			}
 			this.checkGame();
 		}
@@ -132,6 +133,22 @@ Board.prototype.runGame = function (elId) {
 		alert("No game in progress");
 	}
 };
+
+// Initialize the game for X.
+Board.prototype.startX = function() {
+	return;				   // Disabled X because it's not working yet.
+	if (gameActive) {
+		if (ready) {
+			ready = false;
+			this.playX(Number(!curPlayer));
+		}
+		else {
+			return;
+		}
+		ready = true;
+	}
+};
+
 
 // Return true if the square at coords doesn't have a number in it.
 Board.prototype.notSet = function (coords) {
@@ -403,11 +420,14 @@ Board.prototype.playO = function (player) {
 	plen = pScores.countScore(0);
 	for (i=0; i<plen; i++) {
 		vidx = pScores[0][i];
-		if (this.setSide(this.vectors[vidx], player)) {
+		if (this.setSide(vidx, player)) {
+			return;
+		}
+		else if (this.setCenter(vidx, player)) {
 			return;
 		}
 	}
-	alert("Method play() fell off the end!");
+	alert("Method playO() fell off the end!");
 };
 
 Board.prototype.playX = function (player) {
@@ -416,7 +436,7 @@ Board.prototype.playX = function (player) {
 	var pScores = new ScoresArray(DIM);
 	var oScores = new ScoresArray(DIM);
 
-	alert("playX: "+player);
+	// alert("playX: "+player);
 	if (!gameActive) {
 		return;
 	}
@@ -459,8 +479,40 @@ Board.prototype.playX = function (player) {
 		}
 	}
 	// Try offense.
+	olen = oScores.countScore(1);
+	for (i=0; i<olen; i++) {
+		vidx = oScores[1][i];
+		if (pScores.scoreByIndex(vidx, player) == 0) {
+			if (this.setCorner(vidx, player)) {
+				return;
+			}
+			else if (this.setEdge(vidx, player)) {
+				return;
+			}
+			else if (this.setCenter(vidx, player)) {
+				return;
+			}
+		}
+	}
+	// If we didn't do that, then set a side square or the middle
+	// square.
+	plen = pScores.countScore(0);
+	for (i=0; i<plen; i++) {
+		vidx = pScores[0][i];
+		if (this.setSide(vidx, player)) {
+			return;
+		}
+		else if (this.setCenter(vidx, player)) {
+			return;
+		}
+	}
+	alert("Method playX() fell off the end!");
+
 }
 
+// TO-DO:
+// Add an interlock to prevent switching the players in the middle of
+// a game.
 Board.prototype.checkGame = function () {
 	var i, player, e;
 

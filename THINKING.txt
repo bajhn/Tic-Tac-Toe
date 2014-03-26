@@ -1,0 +1,38 @@
+I'd like to explain some of my thinking in implementing this game.  I
+chose to implement it as a JavaScript-only solution because I haven't
+yet learned Django, and my last work in writing an AJAX-enabled web
+page was over a year ago.  I remember from that work that some special
+treatment was needed to deal with Internet Explorer, and given the
+short timeframe that I expected to be a requirement of this project, I
+didn't feel that I could take on both Django and refreshing my memory
+on JavaScript XML parsing routines.  My first choice for this would
+have been Python, but I've never written a graphical application with
+Python; ergo, the best way for me to present a clickable user
+interface would be to use JavaScript.
+
+I had also never considered tic-tac-toe as a computer problem, and
+dealing with this took most of a day.  I knew from playing the game as
+a child that tic-tac-toe is a game that can only be played to a draw
+by two skilled players, and it is necessary for one or the other to
+make a mistake for someone to win.  The first player, X, always has
+the advantage.  In experimentation this weekend, I learned that X's
+best move is to take the corners first, while O's best moves are to
+play the "side" squares (edge squares that are not corners). I
+ultimately concluded that I should tackle the by dividing the board
+into vectors: all of rows, all of the columns, and the two diagonals.
+During each turn, the player examines whether he can complete a
+vector, and if so, he does, winning the game.  Failing that, he next
+checks to head off the opponent's completion of a vector, and then
+finally resorts to trying to play for the sides or corners.
+
+At this time, I still have some bugs and incomplete things.  The X
+routine isn't working correctly, a draw is not reported, and I need to
+lock out the player selection controls while the game is in progress.
+This program is probably inelegant to the hiring manager's eye, but it
+constitutes a good bit of work and a fair amount of learning, and it
+seems quite sufficient for a disposable project.
+
+Thank you for your time,
+Bruce A. Johnson
+Herndon, Virginia
+703-742-8054
