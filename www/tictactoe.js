@@ -4,7 +4,11 @@ var base = "images/";
 var blankImg = base + "blank.png";
 var images = Array(base + "x.png", base + "o.png");
 var DIM = 3;
+var MOVELIM = DIM * DIM;
 var OBASE = "ttt";
+var gameActive = false;
+var curPlayer = null;
+var moves = 0;
 
 // Unnecessary semicolons included at the end of function definitions
 // to make the EMACS syntax checker happy.
@@ -26,7 +30,7 @@ function Board() {
 Board.prototype = new Array(DIM);
 Board.prototype.constructor = Board;
 Board.prototype.reset = function ()  {
-	var r, c, obj, oid;
+	var r, c, obj, oid, e;
 
 	try {
 		for (r=0; r<DIM; r++) {
@@ -35,6 +39,8 @@ Board.prototype.reset = function ()  {
 				document.getElementById(this.mkId(r,c)).src = blankImg;
 			};
 		};
+		gameActive = true;
+		moves = 0
 	}
 	catch (e) {
 		alert("In reset(): " + e);
@@ -55,42 +61,121 @@ Board.prototype.parseId = function(id) {
 	var a;
 
 	a = this.re.exec(id);
-	return new Array(a[1], a[2]);
+	return new Array(Number(a[1]), Number(a[2]));
 };
 
 // Throw an exception if we receive an invalid pair of coordinates.
-Board.prototype.checkRange(c,r) {
+Board.prototype.checkRange = function(c,r) {
 	if ((c < 0) || (r < 0) || (c >= DIM) || (r >= DIM)) {
-		throw("Coordinates out of range: '" + c + "," + r + "'");
+		throw "Coordinates out of range: '" + c + "," + r + "'";
 	}
 };
 
 // Set the value at coordinates c and r to player and load the correct
 // image into the table.
 Board.prototype.move = function(player, c, r) {
-	this.checkRange(c, r);
-	if (typeof(this[c][r]) == "number") {
-		return false;
+	if (gameActive) {
+		this.checkRange(c, r);
+		if (typeof(this[c][r]) == "number") {
+			return false;
+		}
+		this[c][r] = player;
+		document.getElementById(this.mkId(r,c)).src = images[player];
+		moves++;
+		if (moves >= MOVELIM) {
+			gameActive = false;
+		}
 	}
-	this[c][r] = player;
-	document.getElementById(this.mkId(r,c)).src = images[player];
+	else {
+		alert("No game in progress");
+	}
 };
 
 Board.prototype.moveId = function(player, id) {
-	var coords;
+	var coords, i;
 
+	// alert("moveID("+player+", "+id+")");
 	coords = this.parseId(id)
-	this.move(player, Number(coords[0]), coords[1]);
+	this.move(Number(player), coords[0], coords[1]);
+};
+
+// The board is made up of vectors, which we define as being an array
+// of arrays containing column and vector.
+Board.prototype.scoreVector = function (player, v) {
+	var i, val, coords;
+	var tally = 0;
+
+	for (i=0; i<v.length; i++) {
+		coords = v[i];
+		val = this[coords[0]][coords[1]];
+		if (typeof(val) != "number") {
+			continue;
+		}
+		if (val == player) {
+			tally++;
+		}
+	};
+	return tally;
+};
+
+Board.prototype.checkGame = function() {
+	var r, c, player, v, score, e;
+
+	if (gameActive) {
+		try {
+			for (player=0; player<2; player++) {
+				// Check horizontals first.
+				for (r=0; r<DIM; r++) {
+					v = new Array(DIM);
+					for (c=0; c<DIM; c++) {
+						v[c] = new Array(r,c);
+					}
+					if (this.scoreVector(player, v) == DIM) {
+						throw 'winner';
+					}
+				}
+				// Check verticals.
+				for (c=0; c<DIM; c++) {
+					v = new Array(DIM);
+					for (r=0; r<DIM; r++) {
+						v[r] = new Array(r,c);
+					}
+					if (this.scoreVector(player, v) == DIM) {
+						throw 'winner';
+					}
+				}
+				// Check diagnonals.
+				v = new Array(DIM);
+				for (c=0; c<DIM; c++) {
+					v[c] = new Array(c, c);
+				}
+				if (this.scoreVector(player, v) == DIM) {
+					throw 'winner';
+				}
+				v = new Array(DIM);
+				for (r=DIM-1, c=0; r>=0, c<DIM; r--, c++) {
+					v[c] = new Array(r, c);
+				}
+				if (this.scoreVector(player, v) == DIM) {
+					throw 'winner';
+				}
+			}
+		}
+		catch (e) {
+			if (e == "winner") {
+				alert("Player "+player+" is the winner!");
+				gameActive = false;
+			}
+			else {
+				throw e;
+			}
+		}
+	}
 };
 
 var board = null;
 
 function setup() {
 	board = new Board();
+	curPlayer = 0;
 };
-
-
-function userMove(img) {
-	img.src = xImg;
-	return true;
-}
