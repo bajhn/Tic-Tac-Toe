@@ -10,6 +10,7 @@ var OBASE = "ttt";
 var gameActive = false;
 var curPlayer = null;
 var moves = 0;
+var ready = true;
 
 // Unnecessary semicolons included at the end of function definitions
 // to make the EMACS syntax checker happy.
@@ -106,6 +107,14 @@ Board.prototype.reset = function ()  {
 // Run a cycle of the game when a square is clicked.
 Board.prototype.runGame = function (elId) {
 	if (gameActive) {
+		if (ready) {
+			ready = false;
+		}
+		else {
+			return;
+		}
+		// After debugging, put the rest of this block in a try/catch
+		// block so that waiting can be unlocked.
 		this.moveId(curPlayer, elId);
 		this.checkGame();
 		if (gameActive) {
@@ -117,6 +126,7 @@ Board.prototype.runGame = function (elId) {
 			}
 			this.checkGame();
 		}
+		ready = true;
 	}
 	else {
 		alert("No game in progress");
@@ -251,15 +261,17 @@ Board.prototype.getSquare = function (a) {
 Board.prototype.setFirstEmpty = function (vidx, player) {
 	var i, coords, result, v;
 
-	alert("setFirstEmpty "+vidx+" "+player);
+	// alert("setFirstEmpty "+vidx+" "+player);
 	v = this.vectors[vidx];
 	for (i=0; i<v.length; i++) {
 		coords = v[i];
 		val = this[coords[0]][coords[1]];
 		if (this.notSet(coords)) {
 			this.move(player, coords[0], coords[1]);
+			// alert('Set player '+player+' at '+coords);
 			return true;
 		}
+		// else alert('Coords '+coords+' appear to be set');
 	}
 	return false;
 };
@@ -314,12 +326,12 @@ Board.prototype.setCorner = function (vidx, player) {
 // doesn't work for a four-squared game.  It may only work for the
 // defensive (O) side.
 Board.prototype.playO = function (player) {
-	var opponent = Number(!player);
+	var opponent = (player == 0) ? 1 : 0;
 	var pScores = new ScoresArray(DIM);
 	var oScores = new ScoresArray(DIM);
 	var i, j, v, s, vidx, sa, coords, olen, plen;
 
-	alert("playO: "+player);
+	// alert("playO: "+player);
 	if (!gameActive) {
 		return;
 	}
@@ -397,6 +409,57 @@ Board.prototype.playO = function (player) {
 	}
 	alert("Method play() fell off the end!");
 };
+
+Board.prototype.playX = function (player) {
+	var i, v, s;
+	var opponent = (player == 0) ? 1 : 0;
+	var pScores = new ScoresArray(DIM);
+	var oScores = new ScoresArray(DIM);
+
+	alert("playX: "+player);
+	if (!gameActive) {
+		return;
+	}
+	// Opening gambit
+	if (moves == 0) {
+		this.move(player, 0, 0);
+		return;
+	}
+	for (i=0; i<this.vectors.length; i++) {
+		// alert("i="+i+" this.vectors[i]="+this.vectors[i]);
+		v = this.vectors[i];
+		s = this.scoreVector(player, v);
+		// alert("Player "+player+" score in vector "+i+": "+s);
+		pScores.insert(s, i);
+		s = this.scoreVector(opponent, v);
+		// alert("Player "+opponent+" score in vector "+i+": "+s);
+		oScores.insert(s, i);
+	}
+	// See if we can win right now.
+	plen = pScores.countScore(2);
+	for (i=0; i<plen; i++) {
+		vidx = pScores[2][i];
+		if (oScores.scoreByIndex(vidx) == 0) {
+			// Opponent has no squares in this vector.
+			if (this.setFirstEmpty(vidx, player)) {
+				return;
+			}
+		}
+	}
+	// No such luck. Play defense.  If there is a vector with the
+	// opponent's score of 2 and my score there is 0, set the empty
+	// square to block him and return.
+	olen = oScores.countScore(2);
+	for (i=0; i<olen; i++) {
+		vidx = oScores[2][i];
+		if (pScores.scoreByIndex(vidx) == 0) {
+			if (this.setFirstEmpty(vidx, player)) {
+				return;
+			}
+		}
+	}
+	// Try offense.
+}
 
 Board.prototype.checkGame = function () {
 	var i, player, e;
