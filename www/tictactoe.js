@@ -363,7 +363,7 @@ Board.prototype.playO = function (player) {
 		vidx = pScores[2][i];
 		if (oScores.scoreByIndex(vidx) == 0) {
 			// Opponent has no squares in this vector.
-			if (this.setFirstEmpty(this.vectors[vidx], player)) {
+			if (this.setFirstEmpty(vidx, player)) {
 				return;
 			}
 		}
