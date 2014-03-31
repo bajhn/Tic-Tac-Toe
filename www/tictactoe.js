@@ -108,6 +108,7 @@ Board.prototype.reset = function ()  {
 	catch (e) {
 		alert("In reset(): " + e);
 	}
+	return false;
 };
 
 // Run a cycle of the game when a square is clicked.
