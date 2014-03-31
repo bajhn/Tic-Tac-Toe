@@ -7,10 +7,11 @@ var DIM = 3;
 var MOVELIM = DIM * DIM;
 var VECTORCNT = (2 * DIM) + 2;
 var OBASE = "ttt";
-var gameActive = false;
+var gameActive = false;	// flag to indicate that a game is in progress
 var curPlayer = null;
 var moves = 0;
 var ready = true;
+var PSELECT = 'pSelect';	   // stem for player selection button IDs
 
 // Unnecessary semicolons included at the end of function definitions
 // to make the EMACS syntax checker happy.
@@ -51,7 +52,10 @@ ScoresArray.prototype.insert = function (score, index) {
 
 // Return the number of indices stored under score.
 ScoresArray.prototype.countScore = function (score) {
-	return this[score].indexOf(-1);
+	var cnt;
+
+	cnt = this[score].indexOf(-1);
+	return (cnt >= 0) ? cnt : this.length;
 };
 
 // Find the score of a specific vector index.
@@ -95,7 +99,9 @@ Board.prototype.reset = function ()  {
 				document.getElementById(this.mkId(r,c)).src = blankImg;
 			};
 		};
+		document.getElementById(PSELECT+'0').selected = true;
 		gameActive = true;
+		this.lockPlayerButtons(false);
 		moves = 0;
 		this.mkVectors();
 	}
@@ -106,38 +112,46 @@ Board.prototype.reset = function ()  {
 
 // Run a cycle of the game when a square is clicked.
 Board.prototype.runGame = function (elId) {
-	if (gameActive) {
-		if (ready) {
-			ready = false;
-		}
-		else {
-			return;
-		}
-		// After debugging, put the rest of this block in a try/catch
-		// block so that waiting can be unlocked.
-		this.moveId(curPlayer, elId);
-		this.checkGame();
+	var e;
+
+	try {
 		if (gameActive) {
-			if (curPlayer == 0) {
-				this.playO(Number(!curPlayer));
+			if (ready) {
+				ready = false;
 			}
 			else {
-				alert("I don't know how to play as X yet. Sorry!");
-				// this.playX(Number(!curPlayer));
+				return;
 			}
+			// After debugging, put the rest of this block in a try/catch
+			// block so that waiting can be unlocked.
+			this.moveId(curPlayer, elId);
 			this.checkGame();
+			if (gameActive) {
+				if (curPlayer == 0) {
+					this.playO(Number(!curPlayer));
+				}
+				else {
+					// alert("I don't know how to play as X yet. Sorry!");
+					this.playX(Number(!curPlayer));
+				}
+				this.checkGame();
+			}
+			ready = true;
 		}
-		ready = true;
+		else {
+			alert("No game in progress");
+		}
 	}
-	else {
-		alert("No game in progress");
+	catch (e) {
+		alert("Uncaught exception: "+e);
 	}
 };
 
 // Initialize the game for X.
 Board.prototype.startX = function() {
-	return;				   // Disabled X because it's not working yet.
+	// return;				   // Disabled X because it's not working yet.
 	if (gameActive) {
+		this.lockPlayerButtons(true);
 		if (ready) {
 			ready = false;
 			this.playX(Number(!curPlayer));
@@ -154,6 +168,16 @@ Board.prototype.startX = function() {
 Board.prototype.notSet = function (coords) {
 	return (typeof(this[coords[0]][coords[1]]) != "number");
 };
+
+// Return true if the square at coords is set by player.
+Board.prototype.setBy = function (coords, player) {
+	var v;
+
+	v = this[coords[0]][coords[1]];
+	if ((typeof(v) == "number") && (v == player))
+		return true;
+	return false;
+}
 
 // Assemble an element id from column and row numbers.
 Board.prototype.mkId = function (r, c) {
@@ -191,9 +215,9 @@ Board.prototype.move = function (player, r, c) {
 		this[r][c] = player;
 		document.getElementById(this.mkId(r,c)).src = images[player];
 		moves++;
-		if (moves >= MOVELIM) {
-			gameActive = false;
-		}
+		// if (moves >= MOVELIM) {
+		// 	gameActive = false;
+		// }
 		return true;
 	}
 	else {
@@ -310,14 +334,20 @@ Board.prototype.setEdge = function (vidx, player) {
 };
 
 // Sets the center square in the board if it is part of the vector
-// referenced by vidx and returns true if successful.
+// referenced by vidx and returns true if successful.  If vidx is -1,
+// set the center of the board without the vector check.
 Board.prototype.setCenter = function (vidx, player) {
 	var coords, v;
 
-	v = this.vectors[vidx];
-	coords = v[2];
-	if (((coords[0] == 2) && (coords[1] == 2)) &&	 this.notSet(coords)) {
-			this.move(player, 2, 2);
+	if (vidx >= 0) {
+		v = this.vectors[vidx];
+		coords = v[2];
+	}
+	else {
+		coords = new Array(1,1);
+	}
+	if (((coords[0] == 1) && (coords[1] == 1)) &&	 this.notSet(coords)) {
+			this.move(player, 1, 1);
 			return true;
 	}
 	return false;
@@ -333,7 +363,7 @@ Board.prototype.setCorner = function (vidx, player) {
 		coords = v[i];
 		if ((((coords[0] + coords[1]) % 2) == 0) && this.notSet(coords)) {
 			this.move(player, coords[0], coords[1]);
-			return;
+			return true;
 		}
 	}
 	return false;
@@ -373,6 +403,18 @@ Board.prototype.playO = function (player) {
 		// alert("Player "+opponent+" score in vector "+i+": "+s);
 		oScores.insert(s, i);
 	}
+	// Opening gambit
+	if (moves == 1) {
+		if (this.setCenter(-1, player)) {
+			return;
+		}
+		else if (this.setCorner(0, player)) {
+			return;
+		}
+		else {
+			alert('How is it that both O gambits failed?');
+		}
+	}
 
 	// See if we can win right now.
 	plen = pScores.countScore(2);
@@ -397,20 +439,24 @@ Board.prototype.playO = function (player) {
 			}
 		}
 	}
-	// Good, we don't have to play defense.  Try offense.  First, see
-	// if there is a vector where the opponent's score is 1, and if it
-	// is, set a side square adjacent to his corner square and return.
-	olen = oScores.countScore(1);
+	// Avoid the fork that occurs if X is in the center and we hand it
+	// to him by forcing it.
+	if ((moves == 3) && (this.setBy([1,1], opponent))) {
+		if (this.setEdge(2, player)) {
+			return;
+		}
+		else {
+			alert("Second O gambit failed");
+		}
+	}
+	// Try offense.  First, see if there is a vector where our score
+	// is 1 and the opponent's score is 0, and set a square to put him
+	// on the defensive.
+	olen = oScores.countScore(0);
 	for (i=0; i<olen; i++) {
 		vidx = oScores[1][i];
-		if (pScores.scoreByIndex(vidx, player) == 0) {
-			if (this.setEdge(vidx, player)) {
-				return;
-			}
-			else if (this.setCenter(vidx, player)) {
-				return;
-			}
-			else if (this.setCorner(vidx, player)) {
+		if (pScores.scoreByIndex(vidx, player) == 1) {
+			if (this.setFirstEmpty(vidx, player)) {
 				return;
 			}
 		}
@@ -420,18 +466,19 @@ Board.prototype.playO = function (player) {
 	plen = pScores.countScore(0);
 	for (i=0; i<plen; i++) {
 		vidx = pScores[0][i];
-		if (this.setSide(vidx, player)) {
+		if (this.setEdge(vidx, player)) {
 			return;
 		}
-		else if (this.setCenter(vidx, player)) {
+		else if (this.setCorner(vidx, player)) {
 			return;
 		}
 	}
+	
 	alert("Method playO() fell off the end!");
 };
 
 Board.prototype.playX = function (player) {
-	var i, v, s;
+	var i, v, s, olen, plen;
 	var opponent = (player == 0) ? 1 : 0;
 	var pScores = new ScoresArray(DIM);
 	var oScores = new ScoresArray(DIM);
@@ -506,29 +553,53 @@ Board.prototype.playX = function (player) {
 			return;
 		}
 	}
+	// Endgame
+	for (i=0; i<this.vectors.length; i++) {
+		if (this.setFirstEmpty(i, player)) {
+			return;
+		}
+	}
 	alert("Method playX() fell off the end!");
 
-}
+};
 
-// TO-DO:
-// Add an interlock to prevent switching the players in the middle of
-// a game.
+
+// Lock the player buttons if locked is true.
+Board.prototype.lockPlayerButtons = function (locked) {
+	var i;
+
+	for (i=0; i<2; i++) {
+		document.getElementById(PSELECT+i).disabled = Boolean(locked);
+	}
+};
+
+
 Board.prototype.checkGame = function () {
-	var i, player, e;
+	var i, player, e, s;
+	var total = 0;
 
 	if (gameActive) {
 		try {
 			for (player=0; player<2; player++) {
 				for (i=0; i<this.vectors.length; i++) {
-					if (this.scoreVector(player, this.vectors[i]) == DIM) {
+					s = this.scoreVector(player, this.vectors[i]);
+					if (s == DIM) {
 						throw 'winner';
 					}
+					total += s;
 				}
+			}
+			if (total == (DIM * this.vectors.length)) {
+				throw 'draw'
 			}
 		}
 		catch (e) {
 			if (e == "winner") {
 				alert(((player == 0) ? "X" : "O")+" wins!");
+				gameActive = false;
+			}
+			else if (e == 'draw') {
+				alert('The game ended in a draw');
 				gameActive = false;
 			}
 			else {
